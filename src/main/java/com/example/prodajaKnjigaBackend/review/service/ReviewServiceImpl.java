@@ -11,9 +11,6 @@ import com.example.prodajaKnjigaBackend.user.domain.UserEntity;
 import com.example.prodajaKnjigaBackend.user.domain.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

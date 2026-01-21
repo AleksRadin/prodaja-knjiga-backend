@@ -4,7 +4,6 @@ package com.example.prodajaKnjigaBackend.review;
 import com.example.prodajaKnjigaBackend.review.DTO.ReviewDTO;
 import com.example.prodajaKnjigaBackend.review.DTO.ReviewRequest;
 import com.example.prodajaKnjigaBackend.review.DTO.ReviewUpdate;
-import com.example.prodajaKnjigaBackend.review.domain.ReviewEntity;
 import com.example.prodajaKnjigaBackend.review.service.ReviewService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;

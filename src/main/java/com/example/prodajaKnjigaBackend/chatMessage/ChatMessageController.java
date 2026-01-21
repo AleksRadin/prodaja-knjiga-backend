@@ -2,14 +2,11 @@ package com.example.prodajaKnjigaBackend.chatMessage;
 
 import com.example.prodajaKnjigaBackend.chatMessage.DTO.ChatMessageRequest;
 import com.example.prodajaKnjigaBackend.chatMessage.service.ChatMessageService;
-import com.example.prodajaKnjigaBackend.chatMessage.service.ChatMessageServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/chatMessage")

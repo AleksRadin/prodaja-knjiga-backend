@@ -1,16 +1,13 @@
 package com.example.prodajaKnjigaBackend.listing;
 
-import com.example.prodajaKnjigaBackend.exception.ResourceNotFoundException;
 import com.example.prodajaKnjigaBackend.listing.DTO.ListingRequest;
 import com.example.prodajaKnjigaBackend.listing.DTO.ListingUpdate;
-import com.example.prodajaKnjigaBackend.listing.domain.ListingEntity;
 import com.example.prodajaKnjigaBackend.listing.service.ListingService;
 import com.example.prodajaKnjigaBackend.user.domain.UserEntity;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
