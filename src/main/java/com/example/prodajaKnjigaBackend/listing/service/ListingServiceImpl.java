@@ -1,5 +1,7 @@
 package com.example.prodajaKnjigaBackend.listing.service;
 
+import com.example.prodajaKnjigaBackend.author.domain.AuthorEntity;
+import com.example.prodajaKnjigaBackend.author.domain.AuthorRepository;
 import com.example.prodajaKnjigaBackend.book.domain.BookEntity;
 import com.example.prodajaKnjigaBackend.book.domain.BookRepository;
 import com.example.prodajaKnjigaBackend.exception.ResourceNotFoundException;
@@ -31,26 +33,45 @@ public class ListingServiceImpl implements ListingService {
     private final ListingRepository listingRepository;
     private final BookRepository bookRepository;
     private final SecurityUtils securityUtils;
+    private final AuthorRepository authorRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
+    @Transactional
     public ListingDTO createListing(ListingRequest request) {
         UserEntity user = securityUtils.getAuthenticatedUser();
-
         Set<BookEntity> bookEntities = request.getBooks().stream()
-                .map(bookData -> bookRepository.findByTitleAndAuthorAndPublisher(
-                        bookData.getTitle(),
-                        bookData.getAuthor(),
-                        bookData.getPublisher()
-                ).orElseGet(() -> {
-                    BookEntity newBookEntity = new BookEntity();
-                    newBookEntity.setTitle(bookData.getTitle());
-                    newBookEntity.setAuthor(bookData.getAuthor());
-                    newBookEntity.setPublisher(bookData.getPublisher());
-                    return bookRepository.save(newBookEntity);
-                }))
+                .map(bookData -> {
+                    Set<AuthorEntity> authors = bookData.getAuthors().stream()
+                            .map(authorDto -> {
+                                if (authorDto.getId() != null && authorDto.getId() > 0) {
+                                    return authorRepository.findById(authorDto.getId())
+                                            .orElseThrow(() -> new ResourceNotFoundException("Author not found"));
+                                }
+                                return authorRepository.findByFirstnameAndLastname(authorDto.getFirstname(), authorDto.getLastname())
+                                        .orElseGet(() -> {
+                                            AuthorEntity newAuthor = new AuthorEntity();
+                                            newAuthor.setFirstname(authorDto.getFirstname());
+                                            newAuthor.setLastname(authorDto.getLastname());
+                                            return authorRepository.save(newAuthor);
+                                        });
+                            })
+                            .collect(Collectors.toSet());
+
+                    return bookRepository.findByTitleAndPublisher(bookData.getTitle(), bookData.getPublisher())
+                            .stream()
+                            .filter(existingBook -> existingBook.getAuthors().equals(authors))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                BookEntity newBook = new BookEntity();
+                                newBook.setTitle(bookData.getTitle());
+                                newBook.setPublisher(bookData.getPublisher());
+                                newBook.setAuthors(authors);
+                                return bookRepository.save(newBook);
+                            });
+                })
                 .collect(Collectors.toSet());
 
 
@@ -66,8 +87,8 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public Page<ListingDTO> getAllListings(String filter, Boolean fav, Long userId, Pageable pageable) {
-        var specification = new ListingFilter(filter, fav, userId);
+    public Page<ListingDTO> getAllListings(String filter, Boolean isfavorite, Long userId, Pageable pageable) {
+        var specification = new ListingFilter(filter, isfavorite, userId);
         return listingRepository.findAll(specification, pageable).map(ListingMapper::toDto);
     }
 
@@ -81,12 +102,10 @@ public class ListingServiceImpl implements ListingService {
                 .orElseThrow(() -> new ResourceNotFoundException("ListingEntity not found with id: " + listingId));
 
         boolean isAdmin = securityUtils.hasRole("ADMIN");
-
-
         boolean isOwner = listingEntity.getUser().getEmail().equals(currentUser.getEmail());
 
         if (!isAdmin && !isOwner) {
-            throw new AccessDeniedException("You do not have permission to delete this listing.");
+            throw new AccessDeniedException("Only owner or admin can delete listing");
         }
 
         try {
@@ -107,44 +126,50 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
+    @Transactional
     public ListingDTO updateListing(Long listingId, ListingUpdate listingUpdate){
         UserEntity currentUser = securityUtils.getAuthenticatedUser();
 
         ListingEntity listingEntity = listingRepository.findById(listingId)
                 .orElseThrow(() -> new RuntimeException("ListingEntity not found with ID: " + listingId));
 
-        if (!listingEntity.getUser().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("Only owner can change listing");
+        boolean isAdmin = securityUtils.hasRole("ADMIN");
+        boolean isOwner = listingEntity.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new AccessDeniedException("Only owner or admin can change listing");
         }
           Set<BookEntity> updatedBookEntities = listingUpdate.getBooks().stream()
                 .map(bookData -> {
-                    if(bookData.getId() != null){
-                        return bookRepository.findById(bookData.getId())
-                                .map(existingBook ->{
-                                    existingBook.setTitle(bookData.getTitle());
-                                    existingBook.setAuthor(bookData.getAuthor());
-                                    existingBook.setPublisher(bookData.getPublisher());
-                                    return bookRepository.save(existingBook);
-                                })
-                                .orElseThrow(() -> new RuntimeException("BookEntity not found with ID: " + bookData.getId()));
-                    }else{
-                            return bookRepository.findByTitleAndAuthorAndPublisher(
-                                    bookData.getTitle(),
-                                    bookData.getAuthor(),
-                                    bookData.getPublisher()
-                            ).orElseGet(() -> {
-                                BookEntity newBookEntity = new BookEntity();
-                                newBookEntity.setTitle(bookData.getTitle());
-                                newBookEntity.setAuthor(bookData.getAuthor());
-                                newBookEntity.setPublisher(bookData.getPublisher());
-                                return bookRepository.save(newBookEntity);
+                    Set<AuthorEntity> authors = bookData.getAuthors().stream()
+                            .map(authorDto -> {
+                                if (authorDto.getId() != null && authorDto.getId() > 0) {
+                                    return authorRepository.findById(authorDto.getId())
+                                            .orElseThrow(() -> new ResourceNotFoundException("Author not found"));
+                                }
+                                return authorRepository.findByFirstnameAndLastname(authorDto.getFirstname(), authorDto.getLastname())
+                                        .orElseGet(() -> {
+                                            AuthorEntity newAuthor = new AuthorEntity();
+                                            newAuthor.setFirstname(authorDto.getFirstname());
+                                            newAuthor.setLastname(authorDto.getLastname());
+                                            return authorRepository.save(newAuthor);
+                                        });
+                            })
+                            .collect(Collectors.toSet());
+
+                    return bookRepository.findByTitleAndPublisher(bookData.getTitle(), bookData.getPublisher())
+                            .stream()
+                            .filter(existingBook -> existingBook.getAuthors().equals(authors))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                BookEntity newBook = new BookEntity();
+                                newBook.setTitle(bookData.getTitle());
+                                newBook.setPublisher(bookData.getPublisher());
+                                newBook.setAuthors(authors);
+                                return bookRepository.save(newBook);
                             });
-                    }
-
-
                 })
                 .collect(Collectors.toSet());
-
 
         listingEntity.setBooks(updatedBookEntities);
         listingEntity.setPrice(listingUpdate.getPrice());

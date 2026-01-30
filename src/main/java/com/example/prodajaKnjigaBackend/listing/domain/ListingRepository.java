@@ -10,9 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.awt.print.Pageable;
 
 public interface ListingRepository extends JpaRepository<ListingEntity,Long>, JpaSpecificationExecutor<ListingEntity> {
-
-//    @Query(value = "select l from ListingEntity l")
-//   Page<ListingEntity> findAllPageable(Pageable pageable);
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM listing_books WHERE listing_id = :listingId", nativeQuery = true)

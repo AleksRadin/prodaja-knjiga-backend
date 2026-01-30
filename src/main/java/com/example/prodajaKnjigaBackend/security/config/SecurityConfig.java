@@ -70,7 +70,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/listings/**", "/api/books/**", "/api/auth/**", "/api/review/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/listings/**", "/api/books/**", "/api/auth/**", "/api/review/**", "/api/author/**").permitAll()
                         .requestMatchers("/api/auth/request-reset/**").permitAll()
                         .anyRequest().authenticated()
                 )

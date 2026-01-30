@@ -1,5 +1,8 @@
 package prodajaKnjigaBackend.service;
 
+import com.example.prodajaKnjigaBackend.author.DTO.AuthorDTO;
+import com.example.prodajaKnjigaBackend.author.domain.AuthorEntity;
+import com.example.prodajaKnjigaBackend.author.domain.AuthorRepository;
 import com.example.prodajaKnjigaBackend.book.DTO.BookDTO;
 import com.example.prodajaKnjigaBackend.book.domain.BookEntity;
 import com.example.prodajaKnjigaBackend.book.domain.BookRepository;
@@ -39,6 +42,7 @@ class ListingServiceTest {
     @Mock private ListingRepository listingRepository;
     @Mock private BookRepository bookRepository;
     @Mock private SecurityUtils securityUtils;
+    @Mock private AuthorRepository authorRepository;
 
     @InjectMocks private ListingServiceImpl listingService;
 
@@ -53,19 +57,33 @@ class ListingServiceTest {
 
     @Test
     void createListing_success() {
+        AuthorDTO authorDto = new AuthorDTO(null, "Ivo", "Andrić");
+        BookDTO bookDto = new BookDTO(null, "Na Drini ćuprija", Set.of(authorDto), "Delfi");
+
         ListingRequest request = new ListingRequest();
-        request.setBooks(Set.of(new BookDTO(null, "Naslov", "Autor", "Izdavac")));
+        request.setBooks(Set.of(bookDto));
         request.setPrice(1500.0);
         request.setCondition(BookCondition.NEW);
 
         when(securityUtils.getAuthenticatedUser()).thenReturn(mockUser);
-        when(bookRepository.findByTitleAndAuthorAndPublisher(any(), any(), any())).thenReturn(Optional.empty());
-        when(bookRepository.save(any(BookEntity.class))).thenReturn(new BookEntity());
-        when(listingRepository.save(any(ListingEntity.class))).thenReturn(new ListingEntity());
+
+        when(authorRepository.findByFirstnameAndLastname("Ivo", "Andrić")).thenReturn(Optional.empty());
+        when(authorRepository.save(any(AuthorEntity.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        when(bookRepository.findByTitleAndPublisher(any(), any())).thenReturn(Optional.empty());
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        when(listingRepository.save(any(ListingEntity.class))).thenAnswer(i -> {
+            ListingEntity le = (ListingEntity) i.getArguments()[0];
+            le.setId(10L);
+            return le;
+        });
 
         ListingDTO result = listingService.createListing(request);
 
         assertNotNull(result);
+        verify(authorRepository).save(any(AuthorEntity.class));
+        verify(bookRepository).save(any(BookEntity.class));
         verify(listingRepository).save(any(ListingEntity.class));
     }
 
@@ -97,6 +115,8 @@ class ListingServiceTest {
 
         listingService.deleteListing(listingId);
 
+        verify(listingRepository).deleteListingBooks(listingId);
+        verify(listingRepository).deleteListingFavorites(listingId);
         verify(listingRepository).deleteById(listingId);
     }
 

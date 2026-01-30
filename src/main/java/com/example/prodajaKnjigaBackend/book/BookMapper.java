@@ -1,8 +1,11 @@
 package com.example.prodajaKnjigaBackend.book;
 
+import com.example.prodajaKnjigaBackend.author.AuthorMapper;
 import com.example.prodajaKnjigaBackend.book.DTO.BookDTO;
 import com.example.prodajaKnjigaBackend.book.domain.BookEntity;
 import org.springframework.stereotype.Component;
+
+import java.util.stream.Collectors;
 
 @Component
 public class BookMapper {
@@ -13,7 +16,9 @@ public class BookMapper {
         BookDTO dto = new BookDTO();
         dto.setId(entity.getId());
         dto.setTitle(entity.getTitle());
-        dto.setAuthor(entity.getAuthor());
+        dto.setAuthors(entity.getAuthors().stream()
+                .map(AuthorMapper::toDto)
+                .collect(Collectors.toSet()));
         dto.setPublisher(entity.getPublisher());
 
         return dto;
@@ -25,7 +30,9 @@ public class BookMapper {
         BookEntity entity = new BookEntity();
         entity.setId(dto.getId());
         entity.setTitle(dto.getTitle());
-        entity.setAuthor(dto.getAuthor());
+        entity.setAuthors(dto.getAuthors().stream()
+                .map(AuthorMapper::toEntity)
+                .collect(Collectors.toSet()));
         entity.setPublisher(dto.getPublisher());
 
         return entity;

@@ -1,5 +1,7 @@
 package com.example.prodajaKnjigaBackend.listing;
 
+import com.example.prodajaKnjigaBackend.author.domain.AuthorEntity;
+import com.example.prodajaKnjigaBackend.book.domain.BookEntity;
 import com.example.prodajaKnjigaBackend.listing.domain.ListingEntity;
 import jakarta.persistence.criteria.*;
 import lombok.AllArgsConstructor;
@@ -22,19 +24,37 @@ public class ListingFilter implements Specification<ListingEntity> {
         var listPredicates = new LinkedList<Predicate>();
 
         if (StringUtils.hasLength(filter)) {
-            var booksJoin = root.join("books");
+            Join<ListingEntity, BookEntity> booksJoin = root.join("books");
+            Join<BookEntity, AuthorEntity> authorsJoin = booksJoin.join("authors");
+
+            String filterLower = "%" + filter.toLowerCase() + "%";
+
+            Expression<String> fullName = criteriaBuilder.concat(
+                    criteriaBuilder.concat(criteriaBuilder.lower(authorsJoin.get("firstname")), " "),
+                    criteriaBuilder.lower(authorsJoin.get("lastname"))
+            );
+
+            Expression<String> reverseFullName = criteriaBuilder.concat(
+                    criteriaBuilder.concat(criteriaBuilder.lower(authorsJoin.get("lastname")), " "),
+                    criteriaBuilder.lower(authorsJoin.get("firstname"))
+            );
+
             var filterPredicate = new LinkedList<Predicate>();
 
             filterPredicate.add(
-                    criteriaBuilder.like(criteriaBuilder.lower(booksJoin.get("author")), "%" + filter.toLowerCase() + "%")
+                    criteriaBuilder.like(fullName, filterLower)
             );
 
             filterPredicate.add(
-                    criteriaBuilder.like(criteriaBuilder.lower(booksJoin.get("title")), "%" + filter.toLowerCase() + "%")
+                    criteriaBuilder.like(reverseFullName, filterLower)
             );
 
             filterPredicate.add(
-                    criteriaBuilder.like(criteriaBuilder.lower(booksJoin.get("publisher")), "%" + filter.toLowerCase() + "%")
+                    criteriaBuilder.like(criteriaBuilder.lower(booksJoin.get("title")), filterLower)
+            );
+
+            filterPredicate.add(
+                    criteriaBuilder.like(criteriaBuilder.lower(booksJoin.get("publisher")), filterLower)
             );
 
             listPredicates.add(criteriaBuilder.or(filterPredicate.toArray(Predicate[]::new)));

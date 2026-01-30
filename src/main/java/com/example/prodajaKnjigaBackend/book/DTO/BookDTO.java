@@ -1,6 +1,9 @@
 package com.example.prodajaKnjigaBackend.book.DTO;
 
+import com.example.prodajaKnjigaBackend.author.DTO.AuthorDTO;
 import lombok.*;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -10,7 +13,7 @@ import lombok.*;
 public class BookDTO {
     private Long id;
     private String title;
-    private String author;
+    private Set<AuthorDTO> authors;
     private String publisher;
 
 }

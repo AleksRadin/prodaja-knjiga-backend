@@ -11,7 +11,7 @@ import java.util.Set;
 
 public interface ListingService {
     ListingDTO createListing(ListingRequest request);
-    Page<ListingDTO> getAllListings(String filter, Boolean fav, Long userId, Pageable pageable);
+    Page<ListingDTO> getAllListings(String filter, Boolean isfavorite, Long userId, Pageable pageable);
     void deleteListing(Long listingId);
     ListingDTO updateListing(Long listingId, ListingUpdate listingUpdate);
 }
